@@ -1,0 +1,6 @@
+services:
+  pwn-login:
+    build: .
+    ports:
+      - '10003:10003'
+    restart: "always"

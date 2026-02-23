@@ -1,0 +1,7 @@
+THJCC file upload server
+500
+image_2026-02-21_172935403.png here we go absolutely insane.
+
+Author: zKltch
+
+http://chal.thjcc.org:10100

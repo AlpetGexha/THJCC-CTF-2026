@@ -1,0 +1,10 @@
+services:
+  chal:
+    build: ./
+    volumes:
+      - ./share:/home/chal:ro
+      - ./xinetd:/etc/xinetd.d/chal:ro
+      - ./flag.txt:/flag.txt:ro
+    ports: 
+      - 10022:10022
+    restart: always

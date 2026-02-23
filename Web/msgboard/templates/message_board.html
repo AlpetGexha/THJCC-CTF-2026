@@ -1,0 +1,205 @@
+<!doctype html>
+<html>
+    <head>
+        <title>匿名 THJCC 留言板</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta charset="utf-8" />
+        <link rel="stylesheet" href="/static/css/style.css" />
+        <link rel="canonical" href="https://nicewhite.eu.org/message_board" />
+    </head>
+
+    <body>
+        <div class="navbar">
+            <a href="/message_board"
+                ><img src="/static/img/image.jpeg" alt="thjcc logo" />
+                <h1>匿名留言板</h1>
+            </a>
+        </div>
+
+        {% if session.get("user_info") %}
+        <div id="mb_form">
+            <form action="/message_board" method="POST" id="message_form">
+                <input
+                    type="hidden"
+                    name="csrf_token"
+                    value="{{ csrf_token() }}"
+                />
+                <table>
+                    <tr>
+                        <td>留言：</td>
+                        <td>
+                            <textarea
+                                id="content"
+                                name="content"
+                                placeholder="請輸入留言內容"
+                                required
+                            ></textarea>
+                            <div
+                                id="drop-zone"
+                                style="
+                                    border: 2px dashed #ccc;
+                                    padding: 20px;
+                                    text-align: center;
+                                    margin-top: 10px;
+                                "
+                            >
+                                拖曳圖片到此處，或點擊選擇檔案
+                                <input
+                                    type="file"
+                                    id="file-input"
+                                    accept="image/*"
+                                    style="display: none"
+                                />
+                            </div>
+                            <div
+                                id="image-preview"
+                                style="margin-top: 10px"
+                            ></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td></td>
+                        <td>
+                            <button type="submit">送出</button>&emsp;<a
+                                href="/post_anonymous"
+                                >前往匿名區</a
+                            >
+                        </td>
+                    </tr>
+                </table>
+            </form>
+        </div>
+        {% else %}
+        <p id="wanttologin">
+            想留言?<a href="/login">登入</a>或<a href="/reg">註冊</a
+            >！或是你可以<a href="/post_anonymous">匿名留言</a>！
+        </p>
+        {% endif %}
+        <hr />
+        <div id="message_area">
+            {% for m in messages %}
+
+            <div class="message">
+                <a
+                    class="messagelink"
+                    href="messages_replys?post_id={{ m[3] }}"
+                >
+                    <div>
+                        <img
+                            src="/static/img/default.png"
+                            class="profileimg"
+                        /><span class="uname">{{ m[0] }}</span> <br /><br />
+                        <span class="pub_time">{{ m[1] }}</span>
+                    </div>
+                    {% autoescape false %}
+                    <div class="content">{{ m[2] }}</div>
+                    {% endautoescape %}
+                    <p class="reply">回覆數:{{ m[4] }}</p>
+                    {% if m[5] %}
+                    <p class="reply">管理員:此留言有部分可能具有爭議</p>
+                    {% endif %} {% if m[6] %}
+                    <p class="reply">此回覆已被管理員隱藏</p>
+                    {% endif %}
+                </a>
+
+                <div class="reaction" id="{{ m[3] }}">
+                    <input
+                        type="hidden"
+                        id="csrf_token"
+                        value="{{ csrf_token() }}"
+                    />
+                    <a class="reaction_emotes" id="like">👍{{ m[7] }}</a>
+                    <a class="reaction_emotes" id="dislike">👎{{ m[8] }}</a>
+                    <a class="reaction_emotes" id="laugh">🤣{{ m[9] }}</a>
+                </div>
+            </div>
+
+            {% endfor %}
+        </div>
+        <div id="loadmore">
+            <!-- Let me load for a while -->
+            <div class="lds-hourglass"></div>
+            <p id="loading_text">載入中...</p>
+        </div>
+    </body>
+    <script src="/static/js/mb.js"></script>
+    <script src="/static/js/reaction_prod.js"></script>
+    <script>
+        const dropZone = document.getElementById("drop-zone");
+        const fileInput = document.getElementById("file-input");
+        const contentTextArea = document.getElementById("content");
+        const imagePreview = document.getElementById("image-preview");
+
+        if (dropZone) {
+            dropZone.addEventListener("click", () => fileInput.click());
+
+            fileInput.addEventListener("change", () => {
+                if (fileInput.files.length > 0) {
+                    handleFiles(fileInput.files);
+                }
+            });
+
+            dropZone.addEventListener("dragover", (e) => {
+                e.preventDefault();
+                dropZone.style.borderColor = "green";
+            });
+
+            dropZone.addEventListener("dragleave", (e) => {
+                e.preventDefault();
+                dropZone.style.borderColor = "#ccc";
+            });
+
+            dropZone.addEventListener("drop", (e) => {
+                e.preventDefault();
+                dropZone.style.borderColor = "#ccc";
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    handleFiles(files);
+                }
+            });
+        }
+
+        function handleFiles(files) {
+            for (const file of files) {
+                if (file.type.startsWith("image/")) {
+                    uploadFile(file);
+                }
+            }
+        }
+
+        function uploadFile(file) {
+            const formData = new FormData();
+            formData.append("file", file);
+            const csrfToken = document.querySelector(
+                'input[name="csrf_token"]',
+            ).value;
+            formData.append("csrf_token", csrfToken);
+
+            // NOTE: You need to implement the /upload_image endpoint on your server
+            fetch("/api/v1/upload_image", {
+                method: "POST",
+                body: formData,
+            })
+                .then((response) => response.json())
+                .then((data) => {
+                    if (data.err === 0) {
+                        const imageUrl = data.url;
+                        contentTextArea.value += `\n![image](${imageUrl})`;
+
+                        // Display preview
+                        const img = document.createElement("img");
+                        img.src = imageUrl;
+                        img.style.maxWidth = "200px";
+                        img.style.maxHeight = "200px";
+                        imagePreview.appendChild(img);
+                    } else {
+                        alert("Image upload failed: " + data.desc);
+                    }
+                })
+                .catch((error) => {
+                    console.error("Error uploading image:", error);
+                    alert("An error occurred during image upload.");
+                });
+        }
+    </script>
+</html>

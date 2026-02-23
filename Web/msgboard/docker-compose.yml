@@ -1,0 +1,46 @@
+version: "3.8"
+services:
+  web:
+    image: msgboard_mainthing
+    environment:
+      - app_secret_key=ugeozrugetighetuozopers
+      - DATABASE_URL=mongodb://user:password@mongo:27017/message?authSource=admin
+      - MAIL_SERVER=your_mail_server
+      - MAIL_DEFAULT_SENDER=your_email@example.com
+      - MAIL_USERNAME=your_email@example.com
+      - email_key=your_email_password
+      - GOOGLE_SAFE_BROWSING_API_KEY=your_google_safe_browsing_api_key
+      - IMAGE_PROXY_URL=http://localhost:${PORT1}
+      - UPLOAD_FOLDER=/static/upload
+      - FLAG=THJCCgaergeger{jlzergpgkroigjroi} # change in prod
+    build:
+      context: .
+      args:
+        - UPLOAD_FOLDER=/static/upload
+    ports:
+      - "${PORT0}:5000"
+    depends_on:
+      - mongo
+      - imageproxy
+
+  mongo:
+    image: mongo:latest
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=user
+      - MONGO_INITDB_ROOT_PASSWORD=password
+    volumes:
+      - mongo-data:/data/db
+
+  imageproxy:
+    image: ghcr.io/willnorris/imageproxy
+    ports:
+      - "${PORT1}:8080"
+
+volumes:
+  mongo-data:
+networks:
+  default:
+    ipam:
+      config:
+      # Instancer will use ${SUBNET<Number>} to control your subnet
+      - subnet: ${SUBNET0}
