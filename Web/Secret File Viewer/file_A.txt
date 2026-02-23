@@ -1,0 +1,18 @@
+From: Agent K
+To: Agent Q
+Subject: Web Interface Review
+
+Q,
+
+I’ve taken a look at the new web interface you deployed last night.
+The functionality seems fine, but I’m concerned about how files are being handled.
+
+Exposing file paths through user-controllable parameters is always risky.
+You know how creative outsiders can be when they start poking around.
+
+Please make sure the client-side logic is solid and add some extra
+security measures before this goes any further.
+
+We cannot afford careless mistakes this time.
+
+— K
